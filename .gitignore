@@ -1,0 +1,40 @@
+# Python environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Cache and macOS
+.cache/
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+serviceAccountKey.json
+
+# Attendance data
+attendance.csv
+attendance.csv.bak
+unknown_faces.csv
+*.bak
+legacy/*.csv
+
+# Personal face images
+images/*
+!images/.gitkeep
+
+unknown_faces/*
+!unknown_faces/.gitkeep

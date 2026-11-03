@@ -1,0 +1,16 @@
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+extend-exclude = ["legacy", ".cache", "images", "unknown_faces"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: uses the real dlib model on the photos in images/ (a few seconds)",
+    "gui: needs tkinter and a display (use xvfb-run on a headless Linux box)",
+]
+filterwarnings = ["ignore:pkg_resources is deprecated:UserWarning"]

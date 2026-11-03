@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Face Attendance Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0F1923;
+    --surface:   #1A2535;
+    --surface2:  #1F2E40;
+    --border:    rgba(255,255,255,0.08);
+    --green:     #1DB96A;
+    --green-dim: #0d5a31;
+    --red:       #E74C3C;
+    --red-dim:   #6e2019;
+    --blue:      #3498DB;
+    --blue-dim:  #1a4a6e;
+    --amber:     #F39C12;
+    --text:      #ECF0F1;
+    --muted:     #7F8C8D;
+    --radius:    10px;
+  }
+
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  /* ── Header ── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 18px; font-weight: 600; }
+  header h1 span { color: var(--green); }
+  .live-badge {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 12px; color: var(--muted);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── Layout ── */
+  main { padding: 24px 28px; }
+
+  /* ── Stats ── */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .stat-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-value { font-size: 28px; font-weight: 700; }
+  .stat-sub   { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .green { color: var(--green); }
+  .red   { color: var(--red); }
+  .blue  { color: var(--blue); }
+  .amber { color: var(--amber); }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .tab {
+    padding: 7px 16px; border-radius: 99px; font-size: 13px; cursor: pointer; border: none;
+    background: var(--surface2); color: var(--muted); transition: all .15s;
+  }
+  .tab.active { background: var(--green); color: #fff; }
+
+  /* ── Controls ── */
+  .controls { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; }
+  .search-box {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0 12px;
+  }
+  .search-box input { background: transparent; border: none; outline: none; color: var(--text); font-size: 13px; padding: 9px 0; width: 100%; }
+  .search-box input::placeholder { color: var(--muted); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: var(--radius); border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer;
+    text-decoration: none; transition: background .15s;
+  }
+  .btn:hover { background: var(--surface2); }
+  .btn-green { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .btn-green:hover { background: #145e38; }
+
+  /* ── Table ── */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .5px;
+    border-bottom: 1px solid var(--border); background: var(--surface2);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 11px 16px; }
+
+  .avatar {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: var(--green-dim); color: var(--green);
+    font-size: 11px; font-weight: 700; margin-right: 8px; vertical-align: middle;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600;
+  }
+  .badge-present { background: var(--green-dim); color: var(--green); }
+  .badge-absent  { background: var(--red-dim);   color: var(--red); }
+  .badge-unknown { background: var(--blue-dim);  color: var(--blue); }
+
+  .error-banner { display:none; background: var(--red-dim); color:#fff; border:1px solid var(--red); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; font-size: 13px; }
+  .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+
+  /* ── Unknown panel ── */
+  .unknown-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .unknown-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+  .unknown-card img { width: 100%; height: 130px; object-fit: cover; display: block; }
+  .unknown-card p { padding: 8px 10px; font-size: 11px; color: var(--muted); }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+  @media (max-width: 700px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    header h1 { font-size: 15px; }
+    main { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎓 Face Attendance <span>Dashboard</span></h1>
+  <div class="live-badge"><span class="dot"></span> Live — auto-refresh every 10s</div>
+</header>
+
+<main>
+  <div class="error-banner" id="error-banner" role="alert"></div>
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Total enrolled</div>
+      <div class="stat-value blue" id="s-total">—</div>
+      <div class="stat-sub">registered faces</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Present today</div>
+      <div class="stat-value green" id="s-present">—</div>
+      <div class="stat-sub" id="s-today">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Absent today</div>
+      <div class="stat-value red" id="s-absent">—</div>
+      <div class="stat-sub">not yet detected</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Attendance %</div>
+      <div class="stat-value amber" id="s-pct">—</div>
+      <div class="stat-sub">today's rate</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('attendance', this)">Attendance Log</button>
+    <button class="tab" onclick="showTab('unknown', this)">Unknown Faces</button>
+    <button class="tab" onclick="showTab('enrolled', this)">Enrolled Students</button>
+  </div>
+
+  <!-- Attendance tab -->
+  <div id="tab-attendance">
+    <div class="controls">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" opacity=".5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="search" placeholder="Search by name…" oninput="renderAttendance()" />
+      </div>
+      <select id="filter-date" onchange="renderAttendance()"
+        style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:var(--radius);font-size:13px;cursor:pointer;outline:none;">
+        <option value="all">All dates</option>
+        <option value="today" selected>Today only</option>
+      </select>
+      <a class="btn btn-green" href="/api/export">⬇ Export CSV</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+        <tbody id="att-body"></tbody>
+      </table>
+      <div class="empty" id="att-empty" style="display:none">No records found.</div>
+    </div>
+  </div>
+
+  <!-- Unknown tab -->
+  <div id="tab-unknown" style="display:none">
+    <div class="unknown-grid" id="unknown-grid"></div>
+    <div class="empty" id="unk-empty" style="display:none">No unknown faces logged yet.</div>
+  </div>
+
+  <!-- Enrolled tab -->
+  <div id="tab-enrolled" style="display:none">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Student name</th><th>Image file</th></tr></thead>
+        <tbody id="enr-body"></tbody>
+      </table>
+      <div class="empty" id="enr-empty" style="display:none">No students enrolled yet.</div>
+    </div>
+  </div>
+</main>
+
+<script>
+let allAttendance = [];
+let allUnknown   = [];
+let allEnrolled  = [];
+let serverToday  = '';          // date as computed by the server (local time, same as the CSV)
+
+// Names / file names come from user input and CSV files: always escape before using innerHTML.
+function esc(v){
+  return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function initials(name){ return esc(String(name || '').slice(0,2).toUpperCase()); }
+function showError(msg){
+  const b = document.getElementById('error-banner');
+  b.textContent = msg; b.style.display = msg ? 'block' : 'none';
+}
+async function getJSON(url){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error(url + ' returned ' + r.status);
+  return r.json();
+}
+
+async function fetchAll(){
+  let att, stats, unk, enr;
+  try {
+    [att, stats, unk, enr] = await Promise.all([
+      getJSON('/api/attendance'), getJSON('/api/stats'),
+      getJSON('/api/unknown'),    getJSON('/api/enrolled'),
+    ]);
+    showError('');
+  } catch (e) {
+    showError('Could not load data from the server (' + e.message + '). Is app.py still running? Retrying…');
+    return;
+  }
+  serverToday  = stats.today;
+  allAttendance = att;
+  allUnknown   = unk;
+  allEnrolled  = enr;
+
+  document.getElementById('s-total').textContent   = stats.total;
+  document.getElementById('s-present').textContent = stats.present;
+  document.getElementById('s-absent').textContent  = stats.absent;
+  document.getElementById('s-pct').textContent     = stats.total ? stats.pct + '%' : '—';
+  document.getElementById('s-today').textContent   = stats.today;
+
+  renderAttendance();
+  renderUnknown();
+  renderEnrolled();
+}
+
+function renderAttendance(){
+  const search = document.getElementById('search').value.toLowerCase();
+  const fd     = document.getElementById('filter-date').value;
+  const today  = serverToday;     // NOT new Date().toISOString(): that is UTC and is wrong in India early in the morning
+
+  let rows = allAttendance.filter(r => r.Name && r.Name.toLowerCase().includes(search));
+  if(fd === 'today') rows = rows.filter(r => r.Date === today);
+
+  const tbody = document.getElementById('att-body');
+  const empty = document.getElementById('att-empty');
+  tbody.innerHTML = '';
+
+  if(!rows.length){ empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  rows.forEach((r, i) => {
+      tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td style="color:var(--muted)">${i+1}</td>
+        <td><span class="avatar">${initials(r.Name)}</span>${esc(r.Name)}</td>
+        <td style="color:var(--muted)">${esc(r.Date)}</td>
+        <td style="font-variant-numeric:tabular-nums;color:var(--muted)">${esc(r.Time)}</td>
+        <td><span class="badge badge-present">✓ ${esc(r.Status || 'Present')}</span></td>
+      </tr>`);
+  });
+}
+
+function renderUnknown(){
+  const grid  = document.getElementById('unknown-grid');
+  const empty = document.getElementById('unk-empty');
+  grid.innerHTML = '';
+  if(!allUnknown.length){ empty.style.display='block'; return; }
+  empty.style.display='none';
+  allUnknown.slice().reverse().forEach(r => {
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="unknown-card">
+        <img src="/unknown_faces/${encodeURIComponent(r.ImageFile)}" alt="Unknown face" onerror="this.style.display='none'" />
+        <p>${esc(r.DateTime)}</p>
+      </div>`);
+  });
+}
+
+function renderEnrolled(){
+  const tbody = document.getElementById('enr-body');
+  const empty = document.getElementById('enr-empty');
+  tbody.innerHTML = '';
+  if(!allEnrolled.length){ empty.style.display='block'; return; }
+  empty.style.display='none';
+  allEnrolled.forEach((s, i) => {
+    tbody.insertAdjacentHTML('beforeend', `
+      <tr>
+        <td style="color:var(--muted)">${i+1}</td>
+        <td><span class="avatar">${initials(s.name)}</span>${esc(s.name)}</td>
+        <td style="color:var(--muted)">${esc(s.file)}</td>
+      </tr>`);
+  });
+}
+
+function showTab(name, el){
+  ['attendance','unknown','enrolled'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+fetchAll();
+setInterval(fetchAll, 10000);
+</script>
+</body>
+</html>
