@@ -109,3 +109,4 @@ Web API (all `GET`): `/api/attendance`, `/api/stats`, `/api/unknown`, `/api/enro
 * No liveness detection: a printed photo or a phone screen can be accepted as a real face.
 * `unknown_faces/` is never cleaned automatically.
 * The names shown on the camera overlay are limited to English letters (OpenCV font limitation).
+# faceAttendanceSystemProject
